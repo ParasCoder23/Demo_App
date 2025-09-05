@@ -52,9 +52,9 @@ def update_item(item_id: int, item: schemas.ItemCreate, db: Session = Depends(da
 
 @app.delete("/items/{item_id}")
 def delete_item(item_id: int, db: Session = Depends(database.get_db)):
+    # Introducing a null exception error by trying to access a property of None
+    # This will cause a NullPointerException when trying to delete a non-existent item
     db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    db.delete(db_item)
+    db.delete(db_item.nonexistent_property)  # This will cause an error
     db.commit()
     return {"message": "Item deleted successfully"}

@@ -14,8 +14,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Box,
+  Chip,
+  IconButton
 } from '@mui/material';
+import { Edit, Delete, Add } from '@mui/icons-material';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Item } from './types/Item';
 import { api } from './services/api';
 
@@ -37,8 +43,12 @@ function App() {
     try {
       const response = await api.getItems();
       setItems(response.data);
+      // if (response.data.length > 0) {
+      //   toast.success('Items loaded successfully!');
+      // }
     } catch (error) {
       console.error('Error fetching items:', error);
+      toast.error('Failed to load items. Please try again.');
     }
   };
 
@@ -70,110 +80,207 @@ function App() {
     try {
       if (selectedItem) {
         await api.updateItem(selectedItem.id!, formData);
+        toast.success('Item updated successfully!');
       } else {
         await api.createItem(formData);
+        toast.success('Item created successfully!');
       }
       fetchItems();
       handleClose();
     } catch (error) {
       console.error('Error saving item:', error);
+      toast.error(`Failed to ${selectedItem ? 'update' : 'create'} item. Please try again.`);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await api.deleteItem(id);
-      fetchItems();
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
+  const handleDelete = async (id: number, itemName: string) => {
+    // if (window.confirm(`Are you sure you want to delete "${itemName}"?`)) {
+      try {
+        await api.deleteItem(id);
+        toast.success('Item deleted successfully!');
+        fetchItems();
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        toast.error('Failed to delete item. Please try again.');
+      }
+    // }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" component="h1" gutterBottom style={{ marginTop: '2rem' }}>
-        Item Management System
-      </Typography>
-      
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => handleOpen()}
-        style={{ marginBottom: '2rem' }}
-      >
-        Add New Item
-      </Button>
+    <Container maxWidth="lg">
+      <Box sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            Item Management System (Demo Version)
+          </Typography>
+          <Chip label={`${items.length} Items`} color="primary" size="medium" />
+        </Box>
+        
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<Add />}
+          onClick={() => handleOpen()}
+          sx={{ mb: 3, borderRadius: 2, px: 3, py: 1.5 }}
+        >
+          Add New Item
+        </Button>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>${item.price}</TableCell>
-                <TableCell>
-                  <Button
-                    color="primary"
-                    onClick={() => handleOpen(item)}
-                    style={{ marginRight: '1rem' }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    color="error"
-                    onClick={() => handleDelete(item.id!)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
+        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
+          <Table>
+            <TableHead sx={{ backgroundColor: 'primary.main' }}>
+              <TableRow>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>Name</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>Description</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>Price</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }} align="center">Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                    <Typography variant="h6" color="text.secondary">
+                      No items found. Add your first item to get started!
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((item, index) => (
+                  <TableRow 
+                    key={item.id} 
+                    sx={{ 
+                      backgroundColor: index % 2 === 0 ? 'grey.50' : 'white',
+                      '&:hover': { backgroundColor: 'primary.light', color: 'white' }
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: 'medium', fontSize: '1rem' }}>{item.name}</TableCell>
+                    <TableCell sx={{ maxWidth: 300 }}>
+                      <Typography variant="body2" sx={{ 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap' 
+                      }}>
+                        {item.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={`$${item.price.toFixed(2)}`} 
+                        color="success" 
+                        variant="outlined" 
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleOpen(item)}
+                          sx={{ '&:hover': { backgroundColor: 'primary.light' } }}
+                        >
+                          <Edit />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(item.id!, item.name)}
+                          sx={{ '&:hover': { backgroundColor: 'error.light' } }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{selectedItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Name"
-            fullWidth
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            label="Description"
-            fullWidth
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            label="Price"
-            type="number"
-            fullWidth
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
-            {selectedItem ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Dialog 
+          open={open} 
+          onClose={handleClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 2 }
+          }}
+        >
+          <DialogTitle sx={{ backgroundColor: 'primary.main', color: 'white', fontSize: '1.5rem' }}>
+            {selectedItem ? 'Edit Item' : 'Add New Item'}
+          </DialogTitle>
+          <DialogContent sx={{ pt: 3 }}>
+            <TextField
+              label="Name"
+              fullWidth
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              margin="normal"
+              variant="outlined"
+              required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Description"
+              fullWidth
+              multiline
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              margin="normal"
+              variant="outlined"
+              required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Price"
+              type="number"
+              fullWidth
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+              margin="normal"
+              variant="outlined"
+              required
+              inputProps={{ min: 0, step: 0.01 }}
+              InputProps={{
+                startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 3, gap: 1 }}>
+            <Button 
+              onClick={handleClose}
+              variant="outlined"
+              size="large"
+              sx={{ borderRadius: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              variant="contained" 
+              size="large"
+              sx={{ borderRadius: 2, px: 3 }}
+              disabled={!formData.name.trim() || !formData.description.trim() || formData.price <= 0}
+            >
+              {selectedItem ? 'Update Item' : 'Create Item'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
+      </Box>
     </Container>
   );
 }

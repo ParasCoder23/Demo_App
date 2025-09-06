@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Read(/D:\\OneDrive - Olam International\\Desktop\\New folder\\frontend\\src/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
